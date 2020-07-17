@@ -8,28 +8,29 @@ from tensorflow.keras.layers import concatenate
 from transformers import TFBertModel
 
 class PaddingInputExample(object):
-    """Fake example so the num input examples is a multiple of the batch size.
-  When running eval/predict on the TPU, we need to pad the number of examples
-  to be a multiple of the batch size, because the TPU requires a fixed batch
-  size. The alternative is to drop the last batch, which is bad because it means
-  the entire output data won't be generated.
-  We use this class instead of `None` because treating `None` as padding
-  battches could cause silent errors.
-  """
+    """
+    Fake example so the num input examples is a multiple of the batch size.
+    When running eval/predict on the TPU, we need to pad the number of examples
+    to be a multiple of the batch size, because the TPU requires a fixed batch
+    size. The alternative is to drop the last batch, which is bad because it means
+    the entire output data won't be generated.
+    We use this class instead of `None` because treating `None` as padding
+    battches could cause silent errors.
+    """
 
 class InputExample(object):
     """A single training/test example for simple sequence classification."""
 
     def __init__(self, guid, text_a, text_b=None, label=None):
         """Constructs a InputExample.
-    Args:
-      guid: Unique id for the example.
-      text_a: string. The untokenized text of the first sequence. For single
-        sequence tasks, only this sequence must be specified.
-      text_b: (Optional) string. The untokenized text of the second sequence.
-        Only must be specified for sequence pair tasks.
-      label: (Optional) string. The label of the example. This should be
-        specified for train and dev examples, but not for test examples.
+        Args:
+        guid: Unique id for the example.
+        text_a: string. The untokenized text of the first sequence. For single
+            sequence tasks, only this sequence must be specified.
+        text_b: (Optional) string. The untokenized text of the second sequence.
+            Only must be specified for sequence pair tasks.
+        label: (Optional) string. The label of the example. This should be
+            specified for train and dev examples, but not for test examples.
     """
         self.guid = guid
         self.text_a = text_a
@@ -62,8 +63,8 @@ def build_model(max_seq_length):
     model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.00004), loss=tf.keras.losses.categorical_crossentropy, metrics=['accuracy'])   
     return model
 
-def load_model():
-    model = build_model(MAX_SEQUENCE_LENGTH+2) 
+def load_model(max_seq_length):
+    model = build_model(max_seq_length+2) 
     model.load_weights('bert_base_th/AACL_BERT_TH.hdf5')
     return model
 
@@ -152,19 +153,14 @@ def is_thai_alpha(word):
 def is_roman_alpha(word):
     return int(bool(re.match(r'^[a-zA-Z\s]+$', word)))
 
-def is_alnum(word):
-    return int(bool(re.match(r'^[ก-๙a-zA-Z0-9\s]+$', word)))
-
-def is_capitalized(word):
-    return int(bool(re.match(r'^[A-Z][a-z]+(\s[A-Z][a-z]+)*$', word)))
-
 def is_punct(word):
-    return int(bool(re.match(r'^[{}\s]+$'.format(punctuation), word)))      
+    return int(bool(re.match(r'^[{}\s]+$'.format(punctuation+'ฯ '), word)))      
 
 def is_num(word):
     return int(bool(re.match(r'^[๐-๙0-9]+$', word)))
     
 def orthog(word):
+    all_thai_digits = [num for num in thai_digits]+ '1 2 3 4 5 6 7 8 9 0'.split(' ')
     return {
         '1is_roman': is_roman_alpha(word),
         '2is_thai': is_thai_alpha(word),
@@ -180,8 +176,8 @@ def orthog_to_vector(feature_dict):
         feature_vec[i] = feature_dict[k]
     return feature_vec
 
-def all_orthog_vec(X):
-    vec = np.zeros((len(X), MAX_SEQUENCE_LENGTH+2, 6))
+def all_orthog_vec(X, max_seq_length):
+    vec = np.zeros((len(X), max_seq_length+2, 6))
     for i, seq in enumerate(X):
         for j, word in enumerate(seq):
             feature = orthog(word)
@@ -205,12 +201,7 @@ def text_list_to_feature(text_list, tokenizer, max_seq_length):
     e.g. [['สวัสดี', 'ครับ'], ['สวัสดี, 'ค่ะ']]
     """
     examples = convert_text_to_examples(text_list)
-    input_ids, input_masks, segment_ids = convert_examples_to_features(tokenizer, examples, max_seq_length=MAX_SEQUENCE_LENGTH+2)
-    orthog = all_orthog_vec(text_list)
+    input_ids, input_masks, segment_ids = convert_examples_to_features(tokenizer, examples, max_seq_length=max_seq_length+2)
+    orthog = all_orthog_vec(text_list, max_seq_length)
     return input_ids, input_masks, segment_ids, orthog
-
-if __name__ == "__main__":
-    MAX_SEQUENCE_LENGTH = 110
-    punctuation += 'ฯ'
-    punctuation += ' '
-    all_thai_digits = [num for num in thai_digits]+ '1 2 3 4 5 6 7 8 9 0'.split(' ')
+    
