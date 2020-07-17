@@ -1,17 +1,20 @@
 import tensorflow as tf
-import tokenizer as tok
+import tokenization as tok
 from tensorflow.keras.layers import concatenate
 from transformers import TFBertModel
 
-def bert():
+def load_bert():
     bert = TFBertModel.from_pretrained('bert_base_th')
     return bert
 
-def tokenizer():
+def load_tokenizer():
+    tf.gfile = tf.io.gfile
     tokenizer = tok.ThaiTokenizer('th.wiki.bpe.op25000.vocab', 'th.wiki.bpe.op25000.model')
     return tokenizer
 
 def build_model(max_seq_length):
+    n_tags = 14
+    bert = load_bert()
     in_id = tf.keras.layers.Input(shape=(max_seq_length,), name="input_ids", dtype='int64')
     in_mask = tf.keras.layers.Input(shape=(max_seq_length,), name="input_masks", dtype='int64')
     in_segment = tf.keras.layers.Input(shape=(max_seq_length,), name="segment_ids", dtype='int64')
@@ -28,12 +31,7 @@ def build_model(max_seq_length):
     return model
 
 def load_model():
-    model = build_model(MAX_SEQUENCE_LENGTH+2) 
-    model.load_weights('AACL_BERT_TH.hdf5')
-    return model
-
-if __name__ == "__main__":
-    n_tags = 14
     MAX_SEQUENCE_LENGTH = 110
-    tf.gfile = tf.io.gfile
-    bert = load_bert
+    model = build_model(MAX_SEQUENCE_LENGTH+2) 
+    model.load_weights('bert_base_th/AACL_BERT_TH.hdf5')
+    return model
