@@ -1,4 +1,4 @@
-from util import *
+import util
 
 class Tagger:
 
@@ -15,8 +15,8 @@ class Tagger:
             raise Exception("This class is a singleton!")
         Tagger.__instance = self
         self.max_seq_length = 110
-        self.model = load_model(self.max_seq_length)
-        self.tokenizer = load_tokenizer()
+        self.model = util.load_model(self.max_seq_length)
+        self.tokenizer = util.load_tokenizer()
         self.int2tag = {0: '-PAD-',
                         1: 'ADP',
                         2: 'ADV',
@@ -36,20 +36,36 @@ class Tagger:
         """ Tag tokens with POS tags
 
         Arg:
-            text: a list of Thai tokens or list of list of Thai tokens
+            text: a single Thai token (str), a list of Thai tokens, or list of list of Thai tokens.
 
         Returns:
-            a list of POS tags of the same length or a list of such lists
+            A pos tag of the input token in case of a single token.
+            Otherwise a list of POS tags of the same length as input, or a list of such lists.
         """
+        
+        if not text:
+            raise TypeError('The input is empty')
         if type(text) != list:
-            raise TypeError('The input must be a list of strings or list of lists of string')
-        if all(type(elem)==str for elem in text):
+            if type(text) == str:
+                text = [text]
+            else:
+                raise TypeError('The input must be a string, list of strings or list of lists of string')
+        if not all(type(elem)==str for elem in text): # check if input is list of str or list of lists of str
+            if not all(type(elem)==list for elem in text):
+                raise TypeError('The input is a list of neither list or string')
+            elif not(all(all(type(subelem)==str for subelem in elem) for elem in text)):
+                raise TypeError('The input is a list of list of not string')
+        elif all(type(elem)==str for elem in text):
             text = [text]
-        preprocessed_text = preprocess_text_list(text)
-        features = text_list_to_feature(preprocessed_text, self.tokenizer, self.max_seq_length)
+
+        preprocessed_text = util.preprocess_text_list(text)
+        features = util.text_list_to_feature(preprocessed_text, self.tokenizer, self.max_seq_length)
         predictions = self.model.predict(features).argmax(axis=-1)
         tags = [[self.int2tag[tag] for tag in seq[1:len(text[i])+1]] for i, seq in enumerate(predictions)]
         if len(tags) == 1:
             return tags[0]
         return tags
     
+def pos_tag(text):
+    postagger = Tagger()
+    return postagger.tag(text)
