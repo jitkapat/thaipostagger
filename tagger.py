@@ -1,22 +1,32 @@
 import util
 
+
 class Tagger:
+
+    def __init__(self):
+        self.tagger = TaggerSingleton.get_instance()
+
+    def tag(self, text):
+        return self.tagger.tag(text)
+
+
+class TaggerSingleton:
 
     __instance = None
 
     @staticmethod
     def get_instance():
-        if Tagger.__instance is None:
-            Tagger()
-        return Tagger.__instance
+        if TaggerSingleton.__instance is None:
+            TaggerSingleton()
+        return TaggerSingleton.__instance
 
     def __init__(self):
-        if Tagger.__instance != None:
+        if TaggerSingleton.__instance != None:
             raise Exception("This class is a singleton!")
-        Tagger.__instance = self
+        TaggerSingleton.__instance = self
         self.max_seq_length = 110
-        self.model = util.load_model(self.max_seq_length)
-        self.tokenizer = util.load_tokenizer()
+        self.model = None
+        self.tokenizer = None
         self.int2tag = {0: '-PAD-',
                         1: 'ADP',
                         2: 'ADV',
