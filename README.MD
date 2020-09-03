@@ -3,8 +3,8 @@ Proper deployment working in process...
 
 ## How to use (for now):
 
-1. clone this repository and copy ALL the contents into your project folder
-2. download lastest model file from https://github.com/jitkapat/thaipostagger/releases
+1. clone this repository and copy ALL the contents into your project folder.
+2. download lastest model file from https://github.com/jitkapat/thaipostagger/releases.
 3. decompress the contents of the model file into a folder named "bert_base_th" and put in the same folder as the repo files.
 
 ## Example:
